@@ -9,6 +9,12 @@ use rust_bert::resources::RemoteResource;
 use tch::Device;
 
 fn main() -> anyhow::Result<()> {
+    println!("{:?}", generate("uwu", 50, Some(100)));
+
+    Ok(())
+}
+
+fn generate(prompt: &str, min_len: i64, max_len: Option<i64>) -> String {
     //    Set-up model resources
     let config_resource = Box::new(RemoteResource::from_pretrained(
         GptNeoConfigResources::GPT_NEO_125M,
@@ -28,8 +34,8 @@ fn main() -> anyhow::Result<()> {
         config_resource,
         vocab_resource,
         merges_resource: Some(merges_resource),
-        min_length: 10,
-        max_length: Some(32),
+        min_length: min_len,
+        max_length: max_len,
         do_sample: false,
         early_stopping: true,
         num_beams: 4,
@@ -38,15 +44,12 @@ fn main() -> anyhow::Result<()> {
         ..Default::default()
     };
 
-    let mut model = TextGenerationModel::new(generate_config)?;
+    let mut model = TextGenerationModel::new(generate_config).unwrap();
     model.set_device(Device::cuda_if_available());
 
-    let input_context_1 = "It was a very nice and sunny";
-    let input_context_2 = "It was a gloom winter night, and";
-    let output = model.generate(&[input_context_1, input_context_2], None);
+    let input_context_1 = prompt;
+    let output = model.generate(&[input_context_1], None);
 
-    for sentence in output {
-        println!("{sentence}");
-    }
-    Ok(())
+    let response: String = output.into_iter().collect();
+    response
 }
